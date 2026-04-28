@@ -1,20 +1,20 @@
 /*
- * Задача 6.07.3 - Външно сортиране на цели числа (External Merge Sort)
- * --------------------------------------------------------------------
- * Чете цели числа от входен файл и ги записва сортирани в нарастващ ред
- * в нов файл, БЕЗ да унищожава оригинала.
+ * Task 6.07.3 - External sorting of integers (External Merge Sort)
+ * ----------------------------------------------------------------
+ * Reads integers from an input file and writes them sorted in
+ * ascending order into a NEW file, WITHOUT destroying the original.
  *
- * Буферът в паметта е ограничен до N числа (задава се от командния ред).
+ * The in-memory buffer is limited to N integers (set on the command line).
  *
- * Алгоритъм:
- *   ФАЗА 1 (split):  четем по N числа -> qsort в паметта -> записваме във
- *                    временни файлове "run_0.tmp", "run_1.tmp", ...
- *   ФАЗА 2 (merge):  k-way merge - на всяка стъпка взимаме най-малката
- *                    "глава" измежду всички парчета и я записваме в изхода.
+ * Algorithm:
+ *   PHASE 1 (split):  read up to N numbers -> qsort in memory -> write to
+ *                     temporary files "run_0.tmp", "run_1.tmp", ...
+ *   PHASE 2 (merge):  k-way merge - on each step take the smallest "head"
+ *                     among all runs and write it to the output.
  *
- * Компилация:  gcc -Wall -O2 -o external_sort external_sort.c
- * Стартиране:  ./external_sort <вход> <изход> <N> [-v]
- *   -v : verbose режим (печата всяко число; полезно само за малки входове)
+ * Compile:  gcc -Wall -O2 -o external_sort external_sort.c
+ * Run:      ./external_sort <input> <output> <N> [-v]
+ *   -v : verbose mode (prints every number; useful only for small inputs)
  */
 
 #include <stdio.h>
@@ -33,7 +33,7 @@ static int cmp_int(const void *a, const void *b) {
 
 int main(int argc, char *argv[]) {
     if (argc < 4 || argc > 5) {
-        fprintf(stderr, "Употреба: %s <вход> <изход> <N> [-v]\n", argv[0]);
+        fprintf(stderr, "Usage: %s <input> <output> <N> [-v]\n", argv[0]);
         return 1;
     }
     const char *input_path  = argv[1];
@@ -42,28 +42,28 @@ int main(int argc, char *argv[]) {
     int verbose = (argc == 5 && strcmp(argv[4], "-v") == 0);
 
     if (N <= 0) {
-        fprintf(stderr, "[ГРЕШКА] N трябва да е положително.\n");
+        fprintf(stderr, "[ERROR] N must be positive.\n");
         return 1;
     }
 
     printf("=========================================================\n");
-    printf("  ВЪНШНО СОРТИРАНЕ (External Merge Sort)\n");
+    printf("  EXTERNAL MERGE SORT\n");
     printf("=========================================================\n");
-    printf("[ИНФО] Вход : %s\n", input_path);
-    printf("[ИНФО] Изход: %s\n", output_path);
-    printf("[ИНФО] N    = %ld числа в буфер\n", N);
-    printf("[ИНФО] Verbose: %s\n\n", verbose ? "ДА" : "НЕ");
+    printf("[INFO] Input  : %s\n", input_path);
+    printf("[INFO] Output : %s\n", output_path);
+    printf("[INFO] N      = %ld numbers in buffer\n", N);
+    printf("[INFO] Verbose: %s\n\n", verbose ? "YES" : "NO");
 
     clock_t t_start = clock();
 
     FILE *fin = fopen(input_path, "r");
-    if (!fin) { perror("[ГРЕШКА] вход"); return 1; }
+    if (!fin) { perror("[ERROR] input"); return 1; }
 
     long *buffer = (long *)malloc(sizeof(long) * N);
-    if (!buffer) { fprintf(stderr, "[ГРЕШКА] няма памет\n"); fclose(fin); return 1; }
+    if (!buffer) { fprintf(stderr, "[ERROR] out of memory\n"); fclose(fin); return 1; }
 
-    /* ---------- ФАЗА 1: РАЗДЕЛЯНЕ ---------- */
-    printf("---------- ФАЗА 1: РАЗДЕЛЯНЕ ----------\n");
+    /* ---------- PHASE 1: SPLIT ---------- */
+    printf("---------- PHASE 1: SPLIT ----------\n");
     clock_t t1 = clock();
 
     int run_count = 0;
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 
         total_in += count;
         if (verbose || run_count < 3 || run_count % 100 == 0) {
-            printf("  [парче %d] %ld числа -> %s\n", run_count, count, run_name);
+            printf("  [run %d] %ld numbers -> %s\n", run_count, count, run_name);
         }
         run_count++;
     }
@@ -94,24 +94,24 @@ int main(int argc, char *argv[]) {
     free(buffer);
 
     double t1_sec = (double)(clock() - t1) / CLOCKS_PER_SEC;
-    printf("[ФАЗА 1] %d парчета, %ld общо числа, %.3f сек.\n\n",
+    printf("[PHASE 1] %d runs, %ld total numbers, %.3f sec.\n\n",
            run_count, total_in, t1_sec);
 
     if (run_count == 0) {
         FILE *fout = fopen(output_path, "w");
         if (fout) fclose(fout);
-        printf("[ИНФО] Празен вход -> празен изход.\n");
+        printf("[INFO] Empty input -> empty output.\n");
         return 0;
     }
 
-    /* ---------- ФАЗА 2: K-WAY СЛИВАНЕ ---------- */
-    printf("---------- ФАЗА 2: СЛИВАНЕ ----------\n");
+    /* ---------- PHASE 2: K-WAY MERGE ---------- */
+    printf("---------- PHASE 2: MERGE ----------\n");
     clock_t t2 = clock();
 
     FILE **runs  = (FILE **)malloc(sizeof(FILE *) * run_count);
     long  *heads = (long  *)malloc(sizeof(long)  * run_count);
     int   *alive = (int   *)malloc(sizeof(int)   * run_count);
-    if (!runs || !heads || !alive) { fprintf(stderr,"памет\n"); return 1; }
+    if (!runs || !heads || !alive) { fprintf(stderr,"out of memory\n"); return 1; }
 
     for (int i = 0; i < run_count; i++) {
         char run_name[64];
@@ -122,10 +122,10 @@ int main(int argc, char *argv[]) {
     }
 
     FILE *fout = fopen(output_path, "w");
-    if (!fout) { perror("изход"); return 1; }
+    if (!fout) { perror("output"); return 1; }
 
     long step = 0;
-    long progress_step = total_in / 10;   /* печатаме на всеки 10% */
+    long progress_step = total_in / 10;   /* print progress every 10% */
     if (progress_step < 1) progress_step = 1;
 
     while (1) {
@@ -143,9 +143,9 @@ int main(int argc, char *argv[]) {
         step++;
 
         if (verbose) {
-            printf("  стъпка %ld: %ld (от парче %d)\n", step, min_val, min_idx);
+            printf("  step %ld: %ld (from run %d)\n", step, min_val, min_idx);
         } else if (step % progress_step == 0) {
-            printf("  напредък: %ld / %ld (%.0f%%)\n",
+            printf("  progress: %ld / %ld (%.0f%%)\n",
                    step, total_in, 100.0 * step / total_in);
         }
 
@@ -158,9 +158,9 @@ int main(int argc, char *argv[]) {
     fclose(fout);
 
     double t2_sec = (double)(clock() - t2) / CLOCKS_PER_SEC;
-    printf("[ФАЗА 2] записани %ld числа, %.3f сек.\n\n", step, t2_sec);
+    printf("[PHASE 2] wrote %ld numbers, %.3f sec.\n\n", step, t2_sec);
 
-    /* ---------- ПОЧИСТВАНЕ ---------- */
+    /* ---------- CLEANUP ---------- */
     for (int i = 0; i < run_count; i++) {
         if (runs[i]) fclose(runs[i]);
         char run_name[64];
@@ -171,9 +171,9 @@ int main(int argc, char *argv[]) {
 
     double t_total = (double)(clock() - t_start) / CLOCKS_PER_SEC;
     printf("=========================================================\n");
-    printf("  ГОТОВО! %ld числа сортирани -> %s\n", step, output_path);
-    printf("  Оригиналът '%s' е запазен.\n", input_path);
-    printf("  Общо време: %.3f сек.\n", t_total);
+    printf("  DONE! %ld numbers sorted -> %s\n", step, output_path);
+    printf("  Original '%s' is preserved.\n", input_path);
+    printf("  Total time: %.3f sec.\n", t_total);
     printf("=========================================================\n");
     return 0;
 }
